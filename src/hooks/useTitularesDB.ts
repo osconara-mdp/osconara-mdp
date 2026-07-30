@@ -1,97 +1,191 @@
-import { useCallback, useRef } from 'react'
-import { TITULARES_MOCK, type EstadoAportes, type Familiar, type Titular } from '@/lib/mock-data'
+import { useCallback, useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
+import type { EstadoAportes, Familiar, Parentesco, Titular } from '@/lib/mock-data'
 
-// "Base de datos" en memoria del navegador — se pierde al recargar la página. Sesión 6
-// (servicios externos) la reemplaza por las tablas reales de Supabase (titulares/grupo_familiar,
-// ver supabase/migrations/0001_esquema_inicial.sql), sin cambiar la forma en que la usan las
-// pantallas.
-//
-// Usa un ref (no useState) a propósito: escribir y leer deben ser SÍNCRONOS en el mismo tick —
-// quien crea un afiliado y enseguida lo busca no puede esperar a que React re-renderice. La
-// pantalla que sí necesita re-render (la ficha) ya lo obtiene a través de useBuscarAfiliado.
+// Consultas reales contra Supabase (titulares/grupo_familiar/tramites — ver
+// supabase/migrations/0001_esquema_inicial.sql y 0002_ajustes_app_real.sql). Mantiene la misma
+// forma externa que la versión simulada de las Sesiones 3-4, así que App.tsx y las pantallas ya
+// aprobadas no cambian.
+
+const PARENTESCO_A_DB: Record<Parentesco, string> = {
+  Cónyuge: 'conyuge',
+  Hijo: 'hijo',
+  Hija: 'hija',
+  Otro: 'otro',
+}
+
+const PARENTESCO_DE_DB: Record<string, Parentesco> = {
+  conyuge: 'Cónyuge',
+  hijo: 'Hijo',
+  hija: 'Hija',
+  otro: 'Otro',
+}
+
+interface FilaLigera {
+  dni: string
+  empleador: string
+}
+
+function formatearDni(limpio: string): string {
+  // 30482917 -> 30.482.917 (formato estándar argentino, con puntos de miles)
+  return limpio.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+function formatearFecha(iso: string | null): string {
+  if (!iso) return 'Todavía sin cruce'
+  return new Date(iso).toLocaleDateString('es-AR')
+}
+
+function formatearFechaHora(iso: string): string {
+  return new Date(iso).toLocaleString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function useTitularesDB() {
-  const titularesRef = useRef<Record<string, Titular>>({ ...TITULARES_MOCK })
+  // Caché liviana (solo dni + empleador) para que existeDni/listarEmpleadores puedan seguir
+  // siendo funciones síncronas — las pantallas ya aprobadas las llaman así (ej. adentro del
+  // render de FormularioNuevoAfiliado). Se carga una vez al montar y se mantiene al día a mano
+  // después de cada alta/edición, sin volver a pedirla entera.
+  const [ligeros, setLigeros] = useState<FilaLigera[]>([])
 
-  const buscarPorDni = useCallback((dni: string): Titular | null => {
-    const limpio = dni.replace(/\D/g, '')
-    return titularesRef.current[limpio] ?? null
+  useEffect(() => {
+    let cancelado = false
+    supabase
+      .from('titulares')
+      .select('dni, empleador')
+      .then(({ data, error }) => {
+        if (cancelado || error || !data) return
+        setLigeros(data.map((fila) => ({ dni: fila.dni, empleador: fila.empleador })))
+      })
+    return () => {
+      cancelado = true
+    }
   }, [])
 
-  const existeDni = useCallback((dni: string) => Boolean(titularesRef.current[dni.replace(/\D/g, '')]), [])
+  const buscarPorDni = useCallback(async (dni: string): Promise<Titular | null> => {
+    const limpio = dni.replace(/\D/g, '')
+    const { data: fila, error } = await supabase
+      .from('titulares')
+      .select('id, dni, nombre_completo, empleador, estado_aportes, fecha_ultimo_cruce')
+      .eq('dni', limpio)
+      .maybeSingle()
+    if (error || !fila) return null
+
+    const [{ data: familiaFilas }, { data: tramiteFilas }] = await Promise.all([
+      supabase
+        .from('grupo_familiar')
+        .select('nombre_completo, parentesco')
+        .eq('titular_id', fila.id)
+        .order('created_at'),
+      supabase
+        .from('tramites')
+        .select('descripcion, created_at, profiles(full_name)')
+        .eq('titular_id', fila.id)
+        .order('created_at', { ascending: false }),
+    ])
+
+    return {
+      dni: formatearDni(fila.dni),
+      nombreCompleto: fila.nombre_completo,
+      empleador: fila.empleador,
+      estado: fila.estado_aportes === 'inactivo' ? 'inactivo' : 'activo',
+      fechaUltimoCruce: formatearFecha(fila.fecha_ultimo_cruce),
+      familia: (familiaFilas ?? []).map((f) => ({
+        nombre: f.nombre_completo,
+        parentesco: PARENTESCO_DE_DB[f.parentesco] ?? 'Otro',
+      })),
+      tramites: (tramiteFilas ?? []).map((t) => ({
+        descripcion: t.descripcion,
+        fecha: formatearFechaHora(t.created_at),
+        usuario: (t.profiles as unknown as { full_name: string } | null)?.full_name ?? 'Usuario',
+      })),
+    }
+  }, [])
+
+  const existeDni = useCallback(
+    (dni: string) => ligeros.some((r) => r.dni === dni.replace(/\D/g, '')),
+    [ligeros],
+  )
 
   const crear = useCallback(
-    (datos: { dni: string; nombreCompleto: string; empleador: string; estado: EstadoAportes }) => {
+    async (datos: { dni: string; nombreCompleto: string; empleador: string; estado: EstadoAportes }) => {
       const limpio = datos.dni.replace(/\D/g, '')
-      const hoy = new Date().toLocaleDateString('es-AR')
-      titularesRef.current[limpio] = {
-        dni: formatearDni(limpio),
-        nombreCompleto: datos.nombreCompleto,
+      const { error } = await supabase.from('titulares').insert({
+        dni: limpio,
+        nombre_completo: datos.nombreCompleto,
         empleador: datos.empleador,
-        estado: datos.estado,
-        fechaUltimoCruce: hoy,
-        familia: [],
-        tramites: [],
-      }
+        estado_aportes: datos.estado,
+      })
+      if (error) throw error
+      setLigeros((actuales) => [...actuales, { dni: limpio, empleador: datos.empleador }])
     },
     [],
   )
 
-  const actualizarEstado = useCallback((dni: string, estado: EstadoAportes) => {
+  const actualizarEstado = useCallback(async (dni: string, estado: EstadoAportes) => {
     const limpio = dni.replace(/\D/g, '')
-    const existente = titularesRef.current[limpio]
-    if (!existente) return
-    titularesRef.current[limpio] = { ...existente, estado }
+    const { error } = await supabase.from('titulares').update({ estado_aportes: estado }).eq('dni', limpio)
+    if (error) throw error
   }, [])
 
-  const agregarFamiliar = useCallback((dni: string, familiar: Familiar) => {
+  const agregarFamiliar = useCallback(async (dni: string, familiar: Familiar) => {
     const limpio = dni.replace(/\D/g, '')
-    const existente = titularesRef.current[limpio]
-    if (!existente) return
-    titularesRef.current[limpio] = { ...existente, familia: [...existente.familia, familiar] }
+    const { data: titular, error: errorTitular } = await supabase
+      .from('titulares')
+      .select('id')
+      .eq('dni', limpio)
+      .maybeSingle()
+    if (errorTitular || !titular) throw errorTitular ?? new Error('No se encontró el afiliado.')
+    const { error } = await supabase.from('grupo_familiar').insert({
+      titular_id: titular.id,
+      nombre_completo: familiar.nombre,
+      parentesco: PARENTESCO_A_DB[familiar.parentesco],
+    })
+    if (error) throw error
   }, [])
 
-  const quitarFamiliar = useCallback((dni: string, nombreFamiliar: string) => {
+  const quitarFamiliar = useCallback(async (dni: string, nombreFamiliar: string) => {
     const limpio = dni.replace(/\D/g, '')
-    const existente = titularesRef.current[limpio]
-    if (!existente) return
-    titularesRef.current[limpio] = {
-      ...existente,
-      familia: existente.familia.filter((f) => f.nombre !== nombreFamiliar),
-    }
+    const { data: titular } = await supabase.from('titulares').select('id').eq('dni', limpio).maybeSingle()
+    if (!titular) return
+    await supabase.from('grupo_familiar').delete().eq('titular_id', titular.id).eq('nombre_completo', nombreFamiliar)
   }, [])
 
-  const editarDatos = useCallback(
-    (dni: string, datos: { nombreCompleto: string; empleador: string }) => {
-      const limpio = dni.replace(/\D/g, '')
-      const existente = titularesRef.current[limpio]
-      if (!existente) return
-      titularesRef.current[limpio] = {
-        ...existente,
-        nombreCompleto: datos.nombreCompleto,
-        empleador: datos.empleador,
+  const editarDatos = useCallback(async (dni: string, datos: { nombreCompleto: string; empleador: string }) => {
+    const limpio = dni.replace(/\D/g, '')
+    const { error } = await supabase
+      .from('titulares')
+      .update({ nombre_completo: datos.nombreCompleto, empleador: datos.empleador })
+      .eq('dni', limpio)
+    if (error) throw error
+    setLigeros((actuales) => actuales.map((r) => (r.dni === limpio ? { ...r, empleador: datos.empleador } : r)))
+  }, [])
+
+  // El FK `on delete restrict` de tramites.titular_id (supabase/migrations/0001) es quien
+  // realmente protege el historial — acá solo se traduce ese rechazo a un mensaje humano.
+  const eliminar = useCallback(async (dni: string): Promise<{ ok: boolean; motivo?: string }> => {
+    const limpio = dni.replace(/\D/g, '')
+    const { data: titular } = await supabase.from('titulares').select('id').eq('dni', limpio).maybeSingle()
+    if (!titular) return { ok: false, motivo: 'No existe ese afiliado.' }
+
+    const { error } = await supabase.from('titulares').delete().eq('id', titular.id)
+    if (error) {
+      if (error.code === '23503') {
+        return { ok: false, motivo: 'Tiene trámites cargados — el historial no se puede borrar.' }
       }
-    },
-    [],
-  )
-
-  // No se permite eliminar un afiliado que ya tiene trámites cargados — el esquema real
-  // (supabase/migrations/0001) usa `on delete restrict` en tramites.titular_id justamente para
-  // que el historial nunca se pierda al borrar un titular por error.
-  const eliminar = useCallback((dni: string): { ok: boolean; motivo?: string } => {
-    const limpio = dni.replace(/\D/g, '')
-    const existente = titularesRef.current[limpio]
-    if (!existente) return { ok: false, motivo: 'No existe ese afiliado.' }
-    if (existente.tramites.length > 0) {
-      return { ok: false, motivo: 'Tiene trámites cargados — el historial no se puede borrar.' }
+      return { ok: false, motivo: 'No se pudo eliminar. Probá de nuevo.' }
     }
-    delete titularesRef.current[limpio]
+    setLigeros((actuales) => actuales.filter((r) => r.dni !== limpio))
     return { ok: true }
   }, [])
 
   const listarEmpleadores = useCallback((): string[] => {
-    const set = new Set(Object.values(titularesRef.current).map((t) => t.empleador))
-    return Array.from(set)
-  }, [])
+    return Array.from(new Set(ligeros.map((r) => r.empleador))).sort((a, b) => a.localeCompare(b, 'es'))
+  }, [ligeros])
 
   return {
     buscarPorDni,
@@ -104,9 +198,4 @@ export function useTitularesDB() {
     eliminar,
     listarEmpleadores,
   }
-}
-
-function formatearDni(limpio: string): string {
-  // 30482917 -> 30.482.917 (formato estándar argentino, con puntos de miles)
-  return limpio.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }

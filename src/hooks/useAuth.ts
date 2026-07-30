@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { validarCredenciales, type Usuario } from '@/lib/mock-usuarios'
+import { supabase } from '@/lib/supabase/client'
+import type { Rol, Usuario } from '@/lib/mock-usuarios'
 
 type EstadoAuth =
   | { fase: 'sin-sesion' }
@@ -8,21 +9,40 @@ type EstadoAuth =
   | { fase: 'credenciales-invalidas' }
   | { fase: 'bloqueado'; segundos: number }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 const INTENTOS_ANTES_DE_BLOQUEAR = 3
 const BLOQUEO_SEGUNDOS = 30
 
-// Login simulado — se reemplaza por supabase.auth.signInWithPassword() en Sesión 6, sin cambiar
-// la forma en que el resto de la app usa `usuario` (email, nombre, rol). El límite de intentos
+async function cargarUsuario(authUserId: string, email: string): Promise<Usuario | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('full_name, role')
+    .eq('id', authUserId)
+    .maybeSingle()
+  if (error || !data) return null
+  return { email, nombre: data.full_name, rol: data.role as Rol }
+}
+
+// Login real contra Supabase Auth (supabase.auth.signInWithPassword). El límite de intentos
 // vive acá mismo (no se delega solo a Supabase) porque 4 cuentas fijas de acceso administrativo
 // son un blanco fácil de fuerza bruta si nadie lo frena.
 export function useAuth() {
   const [estado, setEstado] = useState<EstadoAuth>({ fase: 'sin-sesion' })
   const intentosFallidos = useRef(0)
   const bloqueadoHasta = useRef(0)
+
+  // Si ya había una sesión viva (recarga de página), la recupera sin pedir login de nuevo.
+  useEffect(() => {
+    let cancelado = false
+    supabase.auth.getSession().then(async ({ data }) => {
+      const session = data.session
+      if (!session || cancelado) return
+      const usuario = await cargarUsuario(session.user.id, session.user.email ?? '')
+      if (!cancelado && usuario) setEstado({ fase: 'con-sesion', usuario })
+    })
+    return () => {
+      cancelado = true
+    }
+  }, [])
 
   // Cuenta regresiva real del bloqueo — sin esto el mensaje "Esperá 30 segundos" queda
   // congelado y parece que la pantalla no responde.
@@ -47,25 +67,35 @@ export function useAuth() {
     }
 
     setEstado({ fase: 'validando' })
-    await esperar(500)
-    const usuario = validarCredenciales(email, password)
-    if (usuario) {
-      intentosFallidos.current = 0
-      setEstado({ fase: 'con-sesion', usuario })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error || !data.user) {
+      intentosFallidos.current += 1
+      if (intentosFallidos.current >= INTENTOS_ANTES_DE_BLOQUEAR) {
+        bloqueadoHasta.current = Date.now() + BLOQUEO_SEGUNDOS * 1000
+        intentosFallidos.current = 0
+        setEstado({ fase: 'bloqueado', segundos: BLOQUEO_SEGUNDOS })
+      } else {
+        setEstado({ fase: 'credenciales-invalidas' })
+      }
       return
     }
 
-    intentosFallidos.current += 1
-    if (intentosFallidos.current >= INTENTOS_ANTES_DE_BLOQUEAR) {
-      bloqueadoHasta.current = Date.now() + BLOQUEO_SEGUNDOS * 1000
-      intentosFallidos.current = 0
-      setEstado({ fase: 'bloqueado', segundos: BLOQUEO_SEGUNDOS })
-    } else {
+    const usuario = await cargarUsuario(data.user.id, data.user.email ?? email)
+    if (!usuario) {
+      await supabase.auth.signOut()
       setEstado({ fase: 'credenciales-invalidas' })
+      return
     }
+
+    intentosFallidos.current = 0
+    setEstado({ fase: 'con-sesion', usuario })
   }, [])
 
-  const cerrarSesion = useCallback(() => setEstado({ fase: 'sin-sesion' }), [])
+  const cerrarSesion = useCallback(() => {
+    void supabase.auth.signOut()
+    setEstado({ fase: 'sin-sesion' })
+  }, [])
 
   return { estado, iniciarSesion, cerrarSesion }
 }

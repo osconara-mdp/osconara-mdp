@@ -1,20 +1,28 @@
 # ESTADO — OSCONARA Seccional MDP
-Última actualización: 2026-07-30 | Sesión actual: 5 (pausada para decisión del usuario)
+Última actualización: 2026-07-30 | Sesión actual: 6 (conectando backend real, en progreso)
 
-⏸️ CHECKPOINT — Sesión 5 (login), 6 rondas de revisor-visual: usabilidad 27→30→30→34→29→(pendiente
-7ma lectura) · craft 12→13→15→15→14→(pendiente). El propio revisor recomendó en la ronda 6 PARAR
-de iterar: los defectos que quedan son o bien ya corregidos (recién arreglados: contradicción
-visual al bloquear el borrado de un afiliado con trámites, texto de bloqueo sin salida) o rozan
-"pulir por pulir" para una herramienta interna de 4 usuarios capacitados (atajos de teclado,
-conteo animado sin dato que contar). Funciona todo lo importante: login, error de credenciales,
-bloqueo con cuenta regresiva tras 3 intentos, header con usuario/rol, eliminar afiliado (con la
-misma restricción `on delete restrict` que tendrá la base de datos real). tsc ✓ build ✓ dev ✓.
-Login SIMULADO (`useAuth.ts` + `mock-usuarios.ts`) — se reemplaza por Supabase Auth real en Sesión 6.
-> Siguiente acción exacta: presentarle al usuario el estado real (funcional, con el detalle de qué
-> quedó pendiente y por qué no se sigue iterando) y esperar su decisión: dar por cerrada la Sesión
-> 5 y pasar a Sesión 6, o pedir alguna corrección puntual más.
+⏸️ CHECKPOINT — Sesión 6: infraestructura real conectada y verificada (GitHub, Supabase, Vercel
+con auto-deploy confirmado por commit canario). Se resolvió un proyecto Vercel duplicado
+(`osconara-mdp-k8pm`, eliminado) y un incidente de exposición accidental de las claves legacy
+JWT de Supabase (`anon`/`service_role`), remediado desactivando esas claves legacy desde el
+dashboard — el proyecto usa solo `sb_publishable_...` de ahora en más.
+Se aplicó la migración `0002_ajustes_app_real.sql` (agrega `nombre_completo`+`empleador` a
+`titulares`, `nombre_completo` a `grupo_familiar`, DNI de familiar ahora opcional, y las
+políticas RLS de DELETE que faltaban en ambas tablas) para que el esquema real coincida con lo
+que la UI ya aprobada necesita. `useTitularesDB.ts` y `useAuth.ts` fueron reescritos para usar
+Supabase real (consultas async + `supabase.auth.signInWithPassword`), manteniendo exactamente
+la misma interfaz externa — `App.tsx` solo se ajustó para `await` esas llamadas ahora asíncronas.
+tsc ✓ build ✓ dev ✓ · verificado en el navegador contra la base real: login con credenciales
+inexistentes hace el viaje real a Supabase y devuelve el error esperado. `mock-data.ts` y
+`mock-usuarios.ts` ahora solo exportan tipos (sin datos de prueba ni credenciales hardcodeadas).
+> Siguiente acción exacta: pedirle al usuario los 4 emails reales (Karina, Yesica, Jorge,
+> Marcelo) — todavía no los mandó — para crear las 4 cuentas reales en Supabase Auth + su fila
+> en `profiles`, y recién ahí probar el login de punta a punta con una cuenta real.
 
 ## Pendiente del usuario (nuevo)
+- [ ] Los 4 emails reales del personal (Karina Godoy, Yesica Viladomat, Jorge Daniel Flores,
+      Marcelo Torres) — pedidos, todavía no recibidos. Sin esto no se pueden crear las cuentas
+      reales de acceso.
 - [ ] Contacto real de soporte/sistemas (email o teléfono) para el link "¿Olvidaste tu
       contraseña?" del login — hoy solo dice "contactá al encargado de sistemas" sin datos,
       porque no se puede inventar un contacto real.
@@ -79,10 +87,10 @@ a alguien dado de baja."
 - Búsquedas recientes (Sesión 3, pedido del usuario): localStorage, máx 5, `useBusquedasRecientes.ts`
   — comodidad de navegador, no dato de negocio (no reemplaza el historial de tramites en DB).
 - Carga manual (Sesión 4, PRINCIPAL — el usuario no tiene forma de exportar el padrón todavía):
-  `useTitularesDB.ts` (store en memoria, useRef) permite crear afiliado, editar nombre/empleador,
-  agregar/quitar familiares y cambiar estado activo↔baja a mano, con confirmación y toasts. Se
-  reemplaza por Supabase real en Sesión 6, sin cambiar la forma en que las pantallas lo usan.
-  El importador de archivo SAAS/SSS queda PENDIENTE (opcional, para cuando puedan exportar).
+  `useTitularesDB.ts` permite crear afiliado, editar nombre/empleador, agregar/quitar familiares
+  y cambiar estado activo↔baja a mano, con confirmación y toasts. Desde Sesión 6 corre contra
+  Supabase real (antes usaba un store en memoria), sin cambiar la forma en que las pantallas lo
+  usan. El importador de archivo SAAS/SSS queda PENDIENTE (opcional, para cuando puedan exportar).
 
 ## Sesiones completadas ✅
 - Sesión 1 — Base y seguridad (2026-07-29): scaffold Vite+React+TS+Tailwind v4, esquema SQL
@@ -97,21 +105,31 @@ a alguien dado de baja."
   familiares, cambiar estado activo↔baja a mano (con confirmación y toasts). 3 rondas de
   revisor-visual: **usabilidad 37/40 · craft 17/20 · LISTA**. tsc ✓ build ✓ dev ✓. Evidencia:
   osconara-ficha-editar.png, osconara-editado.png. Importador de archivo SAAS: pendiente/opcional.
+- Sesión 5 — Login/acceso (2026-07-30): pantalla de login con validación, bloqueo tras 3
+  intentos con cuenta regresiva, mensajes de error. 6 rondas de revisor-visual: **usabilidad
+  34/40 · craft 15/20**, el propio revisor recomendó parar de iterar (lo que quedaba era
+  pulido menor para una herramienta de 4 usuarios capacitados). tsc ✓ build ✓ dev ✓. En esa
+  sesión el login todavía era simulado (mock-usuarios.ts) — reemplazado en Sesión 6.
 
 ## Sesión en progreso 🔧
-(ninguna — pendiente el OK del usuario para arrancar Sesión 5)
+Sesión 6 — Backend real: infraestructura conectada (GitHub/Supabase/Vercel), migración 0002
+aplicada, hooks reescritos contra Supabase real. Falta: crear las 4 cuentas reales (esperando
+los emails) y probar el flujo completo logueado con datos reales (hoy la base está vacía).
 
 ## Próximas sesiones 📋
-- Sesión 5: Login/acceso seguro para los 4 usuarios.
-- Sesión 6: Conexión real a Supabase (aplicar migración 0001), Vercel, certificado de seguridad.
+- Terminar Sesión 6: crear las 4 cuentas reales en Supabase Auth + `profiles` en cuanto lleguen
+  los emails, probar login real de punta a punta, cargar el primer afiliado real de prueba.
+- Auditoría de seguridad (27) y certificado de integridad (61) antes de dar la app por lista
+  para uso diario del personal.
 - Opcional (cuando el usuario pueda exportar el padrón): importador de archivo SAAS/SSS.
 
 ## Problemas conocidos ⚠️
 - Sin internet en la oficina, la app no funciona (no se promete modo offline en el MVP).
+- La base de datos real está vacía todavía — no hay afiliados de prueba cargados en Supabase
+  (a diferencia de las Sesiones 3-4, que usaban datos semilla en memoria).
 
 ## Pendientes del usuario (acciones que el usuario debe hacer)
-- [ ] Ninguna acción pendiente ahora mismo — se avisará cuando haga falta crear cuentas de
-      Supabase/Vercel (Sesión 6).
+- [ ] Mandar los 4 emails reales del personal para poder crear sus cuentas de acceso.
 
 ## Notas para la próxima sesión
 - Proyecto B2B interno a medida, NO consumer SaaS LATAM: módulos de venta masiva del SO

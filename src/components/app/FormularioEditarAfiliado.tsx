@@ -7,7 +7,7 @@ interface FormularioEditarAfiliadoProps {
   empleadoresConocidos: string[]
   onGuardar: (datos: { nombreCompleto: string; empleador: string }) => void
   onCancelar: () => void
-  onEliminar: () => { ok: boolean; motivo?: string }
+  onEliminar: () => void
 }
 
 export function FormularioEditarAfiliado({

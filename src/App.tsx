@@ -114,39 +114,51 @@ function AppInterna({ usuario, onCerrarSesion }: { usuario: Usuario; onCerrarSes
               >
                 <FichaAfiliado
                   titular={estado.titular}
-                  onCambiarEstado={(dni, nuevoEstado) => {
+                  onCambiarEstado={async (dni, nuevoEstado) => {
                     const estadoAnterior = estado.fase === 'exito' ? estado.titular.estado : null
-                    db.actualizarEstado(dni, nuevoEstado)
-                    buscar(dni)
-                    mostrar(
-                      nuevoEstado === 'activo' ? 'Estado actualizado a activo.' : 'Estado actualizado a dado de baja.',
-                      estadoAnterior
-                        ? () => {
-                            db.actualizarEstado(dni, estadoAnterior)
-                            buscar(dni)
-                          }
-                        : undefined,
-                    )
+                    try {
+                      await db.actualizarEstado(dni, nuevoEstado)
+                      await buscar(dni)
+                      mostrar(
+                        nuevoEstado === 'activo' ? 'Estado actualizado a activo.' : 'Estado actualizado a dado de baja.',
+                        estadoAnterior
+                          ? async () => {
+                              await db.actualizarEstado(dni, estadoAnterior)
+                              buscar(dni)
+                            }
+                          : undefined,
+                      )
+                    } catch {
+                      mostrar('No se pudo actualizar el estado. Probá de nuevo.')
+                    }
                   }}
-                  onAgregarFamiliar={(dni, nombre, parentesco) => {
-                    db.agregarFamiliar(dni, { nombre, parentesco })
-                    buscar(dni)
-                    mostrar(`${nombre} agregado al grupo familiar.`)
+                  onAgregarFamiliar={async (dni, nombre, parentesco) => {
+                    try {
+                      await db.agregarFamiliar(dni, { nombre, parentesco })
+                      await buscar(dni)
+                      mostrar(`${nombre} agregado al grupo familiar.`)
+                    } catch {
+                      mostrar('No se pudo agregar al familiar. Probá de nuevo.')
+                    }
                   }}
-                  onQuitarFamiliar={(dni, nombreFamiliar) => {
+                  onQuitarFamiliar={async (dni, nombreFamiliar) => {
                     const familiarQuitado =
                       estado.fase === 'exito' ? estado.titular.familia.find((f) => f.nombre === nombreFamiliar) : null
-                    db.quitarFamiliar(dni, nombreFamiliar)
-                    buscar(dni)
-                    mostrar(
-                      `${nombreFamiliar} quitado del grupo familiar.`,
-                      familiarQuitado
-                        ? () => {
-                            db.agregarFamiliar(dni, familiarQuitado)
-                            buscar(dni)
-                          }
-                        : undefined,
-                    )
+                    try {
+                      await db.quitarFamiliar(dni, nombreFamiliar)
+                      await buscar(dni)
+                      mostrar(
+                        `${nombreFamiliar} quitado del grupo familiar.`,
+                        familiarQuitado
+                          ? async () => {
+                              await db.agregarFamiliar(dni, familiarQuitado)
+                              buscar(dni)
+                            }
+                          : undefined,
+                      )
+                    } catch {
+                      mostrar('No se pudo quitar al familiar. Probá de nuevo.')
+                    }
                   }}
                   onEditarDatos={() => setModalEditarAbierto(true)}
                 />
@@ -183,12 +195,16 @@ function AppInterna({ usuario, onCerrarSesion }: { usuario: Usuario; onCerrarSes
           existeDni={db.existeDni}
           empleadoresConocidos={db.listarEmpleadores()}
           onCancelar={() => setModalNuevoAbierto(false)}
-          onGuardar={(datos, opciones) => {
-            db.crear(datos)
-            mostrar(`${datos.nombreCompleto} se guardó correctamente.`)
-            if (!opciones.cargarOtro) {
-              setModalNuevoAbierto(false)
-              buscar(datos.dni)
+          onGuardar={async (datos, opciones) => {
+            try {
+              await db.crear(datos)
+              mostrar(`${datos.nombreCompleto} se guardó correctamente.`)
+              if (!opciones.cargarOtro) {
+                setModalNuevoAbierto(false)
+                buscar(datos.dni)
+              }
+            } catch {
+              mostrar('No se pudo guardar el afiliado. Probá de nuevo.')
             }
           }}
         />
@@ -200,20 +216,25 @@ function AppInterna({ usuario, onCerrarSesion }: { usuario: Usuario; onCerrarSes
             titular={estado.titular}
             empleadoresConocidos={db.listarEmpleadores()}
             onCancelar={() => setModalEditarAbierto(false)}
-            onGuardar={(datos) => {
-              db.editarDatos(estado.titular.dni, datos)
-              setModalEditarAbierto(false)
-              buscar(estado.titular.dni)
-              mostrar('Datos actualizados correctamente.')
+            onGuardar={async (datos) => {
+              try {
+                await db.editarDatos(estado.titular.dni, datos)
+                setModalEditarAbierto(false)
+                buscar(estado.titular.dni)
+                mostrar('Datos actualizados correctamente.')
+              } catch {
+                mostrar('No se pudieron guardar los cambios. Probá de nuevo.')
+              }
             }}
-            onEliminar={() => {
-              const resultado = db.eliminar(estado.titular.dni)
+            onEliminar={async () => {
+              const resultado = await db.eliminar(estado.titular.dni)
               if (resultado.ok) {
                 setModalEditarAbierto(false)
                 limpiar()
                 mostrar('Afiliado eliminado.')
+              } else {
+                mostrar(resultado.motivo ?? 'No se pudo eliminar.')
               }
-              return resultado
             }}
           />
         </Modal>
