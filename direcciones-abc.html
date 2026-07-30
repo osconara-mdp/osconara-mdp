@@ -1,0 +1,432 @@
+<title>OSCONARA MDP — Direcciones A/B/C</title>
+<style>
+  @font-face {
+    font-family: 'Fraunces';
+    src: local('Fraunces');
+    font-weight: 400 600;
+  }
+
+  :root {
+    --bg-page: #EFEBE2;
+    --bg: #FAF9F6;
+    --surface: #FFFFFE;
+    --sunk: #F2EFE8;
+    --text: #1B2A45;
+    --text-2: #5B6472;
+    --text-3: #8B93A0;
+    --navy: #1B2A52;
+    --navy-ink: #121E3B;
+    --cyan: #2A9DBA;
+    --cyan-soft: rgba(42, 157, 186, 0.12);
+    --gold: #A98B5D;
+    --gold-soft: rgba(169, 139, 93, 0.14);
+    --success: #1E8E5A;
+    --success-soft: rgba(30, 142, 90, 0.12);
+    --danger: #C0392B;
+    --danger-soft: rgba(192, 57, 43, 0.1);
+    --border: rgba(27, 42, 69, 0.1);
+    --shadow-sm: 0 1px 2px rgba(27, 26, 19, 0.06);
+    --shadow-md: 0 8px 24px -8px rgba(27, 26, 19, 0.18);
+    --radius: 10px;
+    --display: 'Fraunces', Georgia, serif;
+    --body: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg-page);
+    color: var(--text);
+    font-family: var(--body);
+    padding: 40px 24px 96px;
+  }
+
+  .intro {
+    max-width: 900px;
+    margin: 0 auto 40px;
+  }
+  .intro .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-weight: 600;
+  }
+  .intro h1 {
+    font-family: var(--display);
+    font-size: 30px;
+    font-weight: 600;
+    margin: 6px 0 8px;
+    text-wrap: balance;
+    color: var(--navy-ink);
+  }
+  .intro p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-2);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .swatches {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .swatch {
+    width: 28px; height: 28px; border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .directions {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .direction-label {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .direction-label .letter {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--navy-ink);
+  }
+  .direction-label .name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+  .direction-label .desc {
+    font-size: 13px;
+    color: var(--text-3);
+  }
+
+  .frame {
+    background: var(--bg);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  /* ============ shared bits ============ */
+  .btn-primary {
+    background: var(--navy);
+    color: #F3F1EA;
+    border: none;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--body);
+    cursor: pointer;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .pill.activo { background: var(--success-soft); color: var(--success); }
+  .pill.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* ============ A: Sello de mostrador ============ */
+  .a-header {
+    background: var(--navy);
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .a-emblem {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .a-emblem::before {
+    content: '';
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(var(--gold) 0deg 4deg, transparent 4deg 18deg);
+    opacity: 0.55;
+    z-index: -1;
+  }
+  .a-emblem span { color: #F3F1EA; font-family: var(--display); font-size: 15px; font-weight: 600; }
+  .a-wordmark { color: #F3F1EA; }
+  .a-wordmark .brand { font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: 0.01em; }
+  .a-wordmark .sub { font-size: 11.5px; color: rgba(243,241,234,0.65); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 1px; }
+
+  .a-body { padding: 28px 32px 32px; }
+  .a-search {
+    display: flex; gap: 10px; margin-bottom: 24px;
+  }
+  .a-search input {
+    flex: 1; border: 1px solid var(--border); background: var(--surface);
+    border-radius: var(--radius); padding: 12px 16px; font-size: 15px; font-family: var(--body); color: var(--text);
+  }
+  .a-search input:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+
+  .a-card {
+    background: var(--surface); border-radius: 14px; border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm); padding: 24px; position: relative;
+  }
+  .a-sello {
+    position: absolute; top: -14px; right: 24px;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--surface);
+    border: 3px solid var(--success);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-md);
+  }
+  .a-sello span { font-size: 11px; font-weight: 700; color: var(--success); text-transform: uppercase; letter-spacing: 0.03em; text-align: center; line-height: 1.2; }
+  .a-name { font-family: var(--display); font-size: 21px; font-weight: 600; margin: 0 0 2px; }
+  .a-dni { color: var(--text-3); font-size: 13px; margin-bottom: 18px; }
+  .a-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .a-field label { display: block; font-size: 11.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .a-field div { font-size: 14.5px; font-weight: 500; }
+  .a-familia { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .a-chip { background: var(--sunk); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; color: var(--text-2); }
+  .a-hist { border-top: 1px solid var(--border); padding-top: 16px; }
+  .a-hist-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13.5px; }
+  .a-hist-row + .a-hist-row { border-top: 1px dashed var(--border); }
+  .a-hist-row .when { color: var(--text-3); }
+
+  /* ============ B: Ficha carnet ============ */
+  .b-top {
+    padding: 18px 32px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .b-brand { font-family: var(--display); font-size: 16px; font-weight: 600; color: var(--navy-ink); }
+  .b-brand .sub { display: block; font-family: var(--body); font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .b-search-mini { display: flex; align-items: center; gap: 8px; background: var(--sunk); border-radius: 999px; padding: 8px 16px; width: 260px; }
+  .b-search-mini input { border: none; background: none; font-size: 13.5px; font-family: var(--body); outline: none; width: 100%; color: var(--text); }
+
+  .b-body { padding: 32px; }
+  .b-carnet {
+    display: flex; background: var(--surface); border-radius: 14px; overflow: hidden;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--border); margin-bottom: 24px;
+  }
+  .b-ribbon { width: 8px; background: var(--success); flex-shrink: 0; }
+  .b-carnet-main { flex: 1; padding: 22px 26px; display: flex; justify-content: space-between; gap: 20px; }
+  .b-photo {
+    width: 58px; height: 58px; border-radius: 12px; background: var(--navy);
+    display: flex; align-items: center; justify-content: center; color: #F3F1EA;
+    font-family: var(--display); font-size: 20px; font-weight: 600; flex-shrink: 0;
+  }
+  .b-id-info { flex: 1; }
+  .b-id-info .name { font-family: var(--display); font-size: 19px; font-weight: 600; margin-bottom: 2px; }
+  .b-id-info .dni { color: var(--text-3); font-size: 13px; }
+  .b-id-status { text-align: right; }
+  .b-id-status .label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+
+  .b-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .b-box { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 18px 20px; }
+  .b-box h3 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold); font-weight: 700; margin: 0 0 12px; }
+  .b-fam-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
+  .b-fam-row + .b-fam-row { border-top: 1px solid var(--border); }
+  .b-fam-row .rel { color: var(--text-3); font-size: 12px; }
+  .b-hist-item { font-size: 13px; padding: 6px 0; color: var(--text-2); }
+  .b-hist-item + .b-hist-item { border-top: 1px dashed var(--border); }
+  .b-hist-item .when { color: var(--text-3); font-size: 11.5px; display: block; }
+
+  /* ============ C: Panel de comando ============ */
+  .c-hero {
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-ink) 100%);
+    padding: 40px 32px 44px;
+    text-align: center;
+  }
+  .c-brand { color: rgba(243,241,234,0.7); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 14px; }
+  .c-hero h2 { font-family: var(--display); color: #F3F1EA; font-size: 22px; font-weight: 500; margin: 0 0 20px; }
+  .c-command {
+    max-width: 460px; margin: 0 auto; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(243,241,234,0.18); border-radius: 999px;
+    display: flex; align-items: center; gap: 10px; padding: 14px 22px;
+    backdrop-filter: blur(6px);
+  }
+  .c-command input { flex: 1; background: none; border: none; outline: none; color: #F3F1EA; font-size: 15px; font-family: var(--body); }
+  .c-command input::placeholder { color: rgba(243,241,234,0.5); }
+
+  .c-body { padding: 0 32px 32px; margin-top: -20px; }
+  .c-result { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-md); border: 1px solid var(--border); overflow: hidden; }
+  .c-result-head { padding: 22px 28px; display: flex; justify-content: space-between; align-items: center; }
+  .c-result-head .name { font-family: var(--display); font-size: 20px; font-weight: 600; }
+  .c-result-head .dni { color: var(--text-3); font-size: 13px; margin-top: 2px; }
+
+  .c-section { padding: 20px 28px; border-top: 2px solid var(--gold-soft); }
+  .c-section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold); font-weight: 700; margin-bottom: 12px; }
+  .c-fam-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .c-fam-card { background: var(--sunk); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+  .c-fam-card .rel { color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .c-hist-row { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; color: var(--text-2); }
+  .c-hist-row .when { color: var(--text-3); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="intro">
+  <div class="eyebrow">OSCONARA Seccional MDP — Sesión 2</div>
+  <h1>Tres interpretaciones fieles del mismo contrato visual</h1>
+  <p>
+    Misma paleta (azul marino institucional, celeste de la obra social, dorado del escudo del
+    gremio), mismo modo claro, mismo par tipográfico. Lo que cambia entre A, B y C es la
+    composición de la pantalla principal y el "dispositivo ownable" — el gesto propio de esta app.
+    Elegí una, combiná lo que te guste de cada una, o pedime ajustes.
+  </p>
+  <div class="swatches">
+    <div class="swatch" style="background:#1B2A52" title="Azul marino"></div>
+    <div class="swatch" style="background:#2A9DBA" title="Celeste"></div>
+    <div class="swatch" style="background:#A98B5D" title="Dorado"></div>
+    <div class="swatch" style="background:#FAF9F6" title="Fondo"></div>
+    <div class="swatch" style="background:#1E8E5A" title="Activo"></div>
+    <div class="swatch" style="background:#C0392B" title="Dado de baja"></div>
+  </div>
+</div>
+
+<div class="directions">
+
+  <!-- A -->
+  <div>
+    <div class="direction-label">
+      <span class="letter">A</span>
+      <span class="name">Sello de mostrador</span>
+      <span class="desc">— el semáforo como sello oficial circular, eco del escudo del gremio</span>
+    </div>
+    <div class="frame">
+      <div class="a-header">
+        <div class="a-emblem"><span>O</span></div>
+        <div class="a-wordmark">
+          <div class="brand">OSCONARA</div>
+          <div class="sub">Seccional Mar del Plata</div>
+        </div>
+      </div>
+      <div class="a-body">
+        <div class="a-search">
+          <input type="text" value="30.482.917" readonly />
+          <button class="btn-primary">Buscar</button>
+        </div>
+        <div class="a-card">
+          <div class="a-sello"><span>Activo</span></div>
+          <div class="a-name">Rubén Alberto Sosa</div>
+          <div class="a-dni tabular">DNI 30.482.917 · Titular</div>
+          <div class="a-grid">
+            <div class="a-field"><label>Último cruce SAAS</label><div>28/07/2026</div></div>
+            <div class="a-field"><label>Empleador</label><div>Naviera del Atlántico S.A.</div></div>
+          </div>
+          <div class="a-familia">
+            <span class="a-chip">Marta Sosa · Cónyuge</span>
+            <span class="a-chip">Iván Sosa · Hijo</span>
+            <span class="a-chip">Lucía Sosa · Hija</span>
+          </div>
+          <div class="a-hist">
+            <div class="a-hist-row"><span>Autorización — consulta clínica</span><span class="when tabular">hoy, 09:14</span></div>
+            <div class="a-hist-row"><span>Autorización — análisis de laboratorio</span><span class="when tabular">22/07, 11:40</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div>
+    <div class="direction-label">
+      <span class="letter">B</span>
+      <span class="name">Ficha carnet</span>
+      <span class="desc">— tarjeta tipo credencial con cinta de color lateral por estado</span>
+    </div>
+    <div class="frame">
+      <div class="b-top">
+        <div class="b-brand">OSCONARA<span class="sub">Seccional Mar del Plata</span></div>
+        <div class="b-search-mini">
+          <span style="color:var(--text-3)">⌕</span>
+          <input type="text" value="30.482.917" readonly />
+        </div>
+      </div>
+      <div class="b-body">
+        <div class="b-carnet">
+          <div class="b-ribbon"></div>
+          <div class="b-carnet-main">
+            <div class="b-photo">RS</div>
+            <div class="b-id-info">
+              <div class="name">Rubén Alberto Sosa</div>
+              <div class="dni tabular">DNI 30.482.917 · Titular · Naviera del Atlántico S.A.</div>
+            </div>
+            <div class="b-id-status">
+              <div class="label">Estado de aportes</div>
+              <span class="pill activo"><span class="dot"></span>Activo</span>
+            </div>
+          </div>
+        </div>
+        <div class="b-cols">
+          <div class="b-box">
+            <h3>Grupo familiar</h3>
+            <div class="b-fam-row"><span>Marta Sosa</span><span class="rel">Cónyuge</span></div>
+            <div class="b-fam-row"><span>Iván Sosa</span><span class="rel">Hijo</span></div>
+            <div class="b-fam-row"><span>Lucía Sosa</span><span class="rel">Hija</span></div>
+          </div>
+          <div class="b-box">
+            <h3>Historial de trámites</h3>
+            <div class="b-hist-item">Autorización — consulta clínica<span class="when tabular">hoy, 09:14 · Karina Godoy</span></div>
+            <div class="b-hist-item">Autorización — análisis de laboratorio<span class="when tabular">22/07, 11:40 · Yesica Viladomat</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div>
+    <div class="direction-label">
+      <span class="letter">C</span>
+      <span class="name">Panel de comando</span>
+      <span class="desc">— buscador protagonista arriba, resultado en secciones con reglas doradas</span>
+    </div>
+    <div class="frame">
+      <div class="c-hero">
+        <div class="c-brand">OSCONARA · Seccional Mar del Plata</div>
+        <h2>¿A quién atendemos?</h2>
+        <div class="c-command">
+          <span style="color:rgba(243,241,234,0.6)">⌕</span>
+          <input type="text" placeholder="Escribí el DNI del afiliado…" value="30.482.917" readonly />
+        </div>
+      </div>
+      <div class="c-body">
+        <div class="c-result">
+          <div class="c-result-head">
+            <div>
+              <div class="name">Rubén Alberto Sosa</div>
+              <div class="dni tabular">DNI 30.482.917 · Naviera del Atlántico S.A.</div>
+            </div>
+            <span class="pill activo"><span class="dot"></span>Activo — al día</span>
+          </div>
+          <div class="c-section">
+            <div class="c-section-title">Grupo familiar</div>
+            <div class="c-fam-grid">
+              <div class="c-fam-card"><div class="rel">Cónyuge</div>Marta Sosa</div>
+              <div class="c-fam-card"><div class="rel">Hijo</div>Iván Sosa</div>
+              <div class="c-fam-card"><div class="rel">Hija</div>Lucía Sosa</div>
+            </div>
+          </div>
+          <div class="c-section">
+            <div class="c-section-title">Historial de trámites</div>
+            <div class="c-hist-row"><span>Autorización — consulta clínica</span><span class="when">hoy, 09:14</span></div>
+            <div class="c-hist-row"><span>Autorización — análisis de laboratorio</span><span class="when">22/07, 11:40</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
