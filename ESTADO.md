@@ -1,28 +1,34 @@
 # ESTADO — OSCONARA Seccional MDP
-Última actualización: 2026-07-30 | Sesión actual: 6 (conectando backend real, en progreso)
+Última actualización: 2026-07-30 | Sesión actual: 6 (backend real, en progreso)
 
 ⏸️ CHECKPOINT — Sesión 6: infraestructura real conectada y verificada (GitHub, Supabase, Vercel
-con auto-deploy confirmado por commit canario). Se resolvió un proyecto Vercel duplicado
-(`osconara-mdp-k8pm`, eliminado) y un incidente de exposición accidental de las claves legacy
-JWT de Supabase (`anon`/`service_role`), remediado desactivando esas claves legacy desde el
-dashboard — el proyecto usa solo `sb_publishable_...` de ahora en más.
-Se aplicó la migración `0002_ajustes_app_real.sql` (agrega `nombre_completo`+`empleador` a
-`titulares`, `nombre_completo` a `grupo_familiar`, DNI de familiar ahora opcional, y las
-políticas RLS de DELETE que faltaban en ambas tablas) para que el esquema real coincida con lo
-que la UI ya aprobada necesita. `useTitularesDB.ts` y `useAuth.ts` fueron reescritos para usar
-Supabase real (consultas async + `supabase.auth.signInWithPassword`), manteniendo exactamente
-la misma interfaz externa — `App.tsx` solo se ajustó para `await` esas llamadas ahora asíncronas.
-tsc ✓ build ✓ dev ✓ · verificado en el navegador contra la base real: login con credenciales
-inexistentes hace el viaje real a Supabase y devuelve el error esperado. `mock-data.ts` y
-`mock-usuarios.ts` ahora solo exportan tipos (sin datos de prueba ni credenciales hardcodeadas).
-> Siguiente acción exacta: pedirle al usuario los 4 emails reales (Karina, Yesica, Jorge,
-> Marcelo) — todavía no los mandó — para crear las 4 cuentas reales en Supabase Auth + su fila
-> en `profiles`, y recién ahí probar el login de punta a punta con una cuenta real.
+con auto-deploy confirmado). Se resolvió un proyecto Vercel duplicado (`osconara-mdp-k8pm`,
+eliminado) y un incidente de exposición accidental de las claves legacy JWT de Supabase
+(`anon`/`service_role`), remediado desactivando esas claves legacy — el proyecto usa solo
+`sb_publishable_...` de ahora en más.
+Migraciones aplicadas: `0002` (nombre_completo+empleador en titulares, nombre_completo en
+grupo_familiar, DNI de familiar opcional, políticas RLS de DELETE que faltaban) y `0003`
+(email/teléfono/dirección opcionales en titulares, default en tramites.tipo). `useTitularesDB.ts`
+y `useAuth.ts` corren 100% contra Supabase real (ya no hay mock ni datos de prueba en el código).
+Se agregó, además de lo pedido originalmente: datos de contacto del afiliado (email/teléfono/
+dirección) en alta y edición + visibles en la ficha, y un alta REAL de trámites desde la ficha
+(reemplaza el botón "próximamente" — `RegistrarTramite.tsx`).
+tsc ✓ build ✓ dev ✓ · pusheado y desplegado (Vercel confirmó "success" en el commit `45c0706`).
+**Ya se creó la primera cuenta real** (Jorge Daniel Flores, supervisor) y Jorge confirmó que
+pudo entrar a la app en vivo. Las funciones nuevas (contacto + trámites) todavía NO se probaron
+en el navegador con una cuenta real —no hay forma de crear una cuenta de prueba propia sin pedir
+credenciales reales, así que quedó verificado por código/tsc/build, pendiente que alguien con
+cuenta real (ej. Jorge) lo pruebe una vez y confirme.
+> Siguiente acción exacta: pedirle al usuario que pruebe con la cuenta de Jorge: buscar un
+> afiliado (o cargar uno nuevo), completar email/teléfono/dirección, y registrar un trámite
+> desde la ficha — confirmar que todo se guarda y se vuelve a ver al buscar de nuevo. En
+> paralelo, seguir pidiendo los 3 emails que faltan (Karina, Yesica, Marcelo).
 
 ## Pendiente del usuario (nuevo)
-- [ ] Los 4 emails reales del personal (Karina Godoy, Yesica Viladomat, Jorge Daniel Flores,
-      Marcelo Torres) — pedidos, todavía no recibidos. Sin esto no se pueden crear las cuentas
-      reales de acceso.
+- [ ] Probar en la app en vivo (con la cuenta de Jorge) las 2 funciones nuevas: cargar contacto
+      (email/teléfono/dirección) de un afiliado, y registrar un trámite desde la ficha.
+- [ ] Los emails reales de Karina Godoy, Yesica Viladomat y Marcelo Torres — pedidos, todavía
+      no recibidos (el de Jorge ya se usó para crear su cuenta).
 - [ ] Contacto real de soporte/sistemas (email o teléfono) para el link "¿Olvidaste tu
       contraseña?" del login — hoy solo dice "contactá al encargado de sistemas" sin datos,
       porque no se puede inventar un contacto real.
@@ -112,24 +118,25 @@ a alguien dado de baja."
   sesión el login todavía era simulado (mock-usuarios.ts) — reemplazado en Sesión 6.
 
 ## Sesión en progreso 🔧
-Sesión 6 — Backend real: infraestructura conectada (GitHub/Supabase/Vercel), migración 0002
-aplicada, hooks reescritos contra Supabase real. Falta: crear las 4 cuentas reales (esperando
-los emails) y probar el flujo completo logueado con datos reales (hoy la base está vacía).
+Sesión 6 — Backend real: infraestructura conectada (GitHub/Supabase/Vercel), migraciones 0002 y
+0003 aplicadas, hooks reescritos contra Supabase real, cuenta de Jorge creada y funcionando.
+Falta: crear las 3 cuentas reales restantes (esperando emails), probar en vivo las funciones de
+contacto y trámites, y cargar el primer afiliado real de la seccional.
 
 ## Próximas sesiones 📋
-- Terminar Sesión 6: crear las 4 cuentas reales en Supabase Auth + `profiles` en cuanto lleguen
-  los emails, probar login real de punta a punta, cargar el primer afiliado real de prueba.
+- Terminar Sesión 6: crear las cuentas de Karina, Yesica y Marcelo en cuanto lleguen los emails,
+  confirmar con Jorge que contacto+trámites funcionan bien en vivo, cargar afiliados reales.
 - Auditoría de seguridad (27) y certificado de integridad (61) antes de dar la app por lista
   para uso diario del personal.
 - Opcional (cuando el usuario pueda exportar el padrón): importador de archivo SAAS/SSS.
 
 ## Problemas conocidos ⚠️
 - Sin internet en la oficina, la app no funciona (no se promete modo offline en el MVP).
-- La base de datos real está vacía todavía — no hay afiliados de prueba cargados en Supabase
-  (a diferencia de las Sesiones 3-4, que usaban datos semilla en memoria).
+- La base de datos real está prácticamente vacía todavía — falta cargar los afiliados reales.
 
 ## Pendientes del usuario (acciones que el usuario debe hacer)
-- [ ] Mandar los 4 emails reales del personal para poder crear sus cuentas de acceso.
+- [ ] Mandar los emails reales de Karina, Yesica y Marcelo para crear sus cuentas de acceso.
+- [ ] Probar con la cuenta de Jorge que cargar contacto y registrar un trámite funciona bien.
 
 ## Notas para la próxima sesión
 - Proyecto B2B interno a medida, NO consumer SaaS LATAM: módulos de venta masiva del SO
