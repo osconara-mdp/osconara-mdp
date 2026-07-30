@@ -22,6 +22,9 @@ export interface Titular {
   empleador: string
   estado: EstadoAportes
   fechaUltimoCruce: string
+  email: string | null
+  telefono: string | null
+  direccion: string | null
   familia: Familiar[]
   tramites: Tramite[]
 }

@@ -5,12 +5,14 @@ import { SelloEstado } from '@/components/app/SelloEstado'
 import { InfoNota } from '@/components/app/InfoNota'
 import { CambiarEstado } from '@/components/app/CambiarEstado'
 import { AgregarFamiliar } from '@/components/app/AgregarFamiliar'
+import { RegistrarTramite } from '@/components/app/RegistrarTramite'
 
 interface FichaAfiliadoProps {
   titular: Titular
   onCambiarEstado: (dni: string, nuevoEstado: EstadoAportes) => void
   onAgregarFamiliar: (dni: string, nombre: string, parentesco: Parentesco) => void
   onQuitarFamiliar: (dni: string, nombreFamiliar: string) => void
+  onRegistrarTramite: (dni: string, descripcion: string) => void
   onEditarDatos: () => void
 }
 
@@ -19,6 +21,7 @@ export function FichaAfiliado({
   onCambiarEstado,
   onAgregarFamiliar,
   onQuitarFamiliar,
+  onRegistrarTramite,
   onEditarDatos,
 }: FichaAfiliadoProps) {
   const reducedMotion = useReducedMotion()
@@ -72,6 +75,24 @@ export function FichaAfiliado({
           <dt className="text-xs font-medium uppercase tracking-wide text-txt-tertiary">Empleador</dt>
           <dd className="mt-1 text-sm font-medium text-txt-primary">{titular.empleador}</dd>
         </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-txt-tertiary">Correo electrónico</dt>
+          <dd className="mt-1 text-sm font-medium text-txt-primary">
+            {titular.email || <span className="font-normal text-txt-tertiary">Sin cargar</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-txt-tertiary">Teléfono</dt>
+          <dd className="mt-1 text-sm font-medium text-txt-primary tabular">
+            {titular.telefono || <span className="font-normal text-txt-tertiary">Sin cargar</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-txt-tertiary">Dirección</dt>
+          <dd className="mt-1 text-sm font-medium text-txt-primary">
+            {titular.direccion || <span className="font-normal text-txt-tertiary">Sin cargar</span>}
+          </dd>
+        </div>
       </dl>
 
       <div className="mt-6">
@@ -111,19 +132,9 @@ export function FichaAfiliado({
           Historial de trámites
         </h3>
         {titular.tramites.length === 0 ? (
-          <div className="flex flex-col items-start gap-2">
-            <p className="text-sm text-txt-tertiary">Todavía no se cargó ningún trámite para este afiliado.</p>
-            <button
-              type="button"
-              disabled
-              title="Todavía no está disponible — próximamente"
-              className="h-9 cursor-not-allowed rounded-lg border border-dashed border-border-strong px-3 text-xs text-txt-tertiary opacity-70"
-            >
-              Registrar trámite (próximamente)
-            </button>
-          </div>
+          <p className="mb-3 text-sm text-txt-tertiary">Todavía no se cargó ningún trámite para este afiliado.</p>
         ) : (
-          <motion.ul variants={container} initial="hidden" animate="show">
+          <motion.ul variants={container} initial="hidden" animate="show" className="mb-3">
             {titular.tramites.map((t, i) => (
               <motion.li
                 key={i}
@@ -138,6 +149,7 @@ export function FichaAfiliado({
             ))}
           </motion.ul>
         )}
+        <RegistrarTramite onRegistrar={(descripcion) => onRegistrarTramite(titular.dni, descripcion)} />
       </div>
     </motion.div>
   )

@@ -70,7 +70,7 @@ export function useTitularesDB() {
     const limpio = dni.replace(/\D/g, '')
     const { data: fila, error } = await supabase
       .from('titulares')
-      .select('id, dni, nombre_completo, empleador, estado_aportes, fecha_ultimo_cruce')
+      .select('id, dni, nombre_completo, empleador, estado_aportes, fecha_ultimo_cruce, email, telefono, direccion')
       .eq('dni', limpio)
       .maybeSingle()
     if (error || !fila) return null
@@ -94,6 +94,9 @@ export function useTitularesDB() {
       empleador: fila.empleador,
       estado: fila.estado_aportes === 'inactivo' ? 'inactivo' : 'activo',
       fechaUltimoCruce: formatearFecha(fila.fecha_ultimo_cruce),
+      email: fila.email,
+      telefono: fila.telefono,
+      direccion: fila.direccion,
       familia: (familiaFilas ?? []).map((f) => ({
         nombre: f.nombre_completo,
         parentesco: PARENTESCO_DE_DB[f.parentesco] ?? 'Otro',
@@ -112,13 +115,24 @@ export function useTitularesDB() {
   )
 
   const crear = useCallback(
-    async (datos: { dni: string; nombreCompleto: string; empleador: string; estado: EstadoAportes }) => {
+    async (datos: {
+      dni: string
+      nombreCompleto: string
+      empleador: string
+      estado: EstadoAportes
+      email?: string
+      telefono?: string
+      direccion?: string
+    }) => {
       const limpio = datos.dni.replace(/\D/g, '')
       const { error } = await supabase.from('titulares').insert({
         dni: limpio,
         nombre_completo: datos.nombreCompleto,
         empleador: datos.empleador,
         estado_aportes: datos.estado,
+        email: datos.email || null,
+        telefono: datos.telefono || null,
+        direccion: datos.direccion || null,
       })
       if (error) throw error
       setLigeros((actuales) => [...actuales, { dni: limpio, empleador: datos.empleador }])
@@ -155,14 +169,45 @@ export function useTitularesDB() {
     await supabase.from('grupo_familiar').delete().eq('titular_id', titular.id).eq('nombre_completo', nombreFamiliar)
   }, [])
 
-  const editarDatos = useCallback(async (dni: string, datos: { nombreCompleto: string; empleador: string }) => {
+  const editarDatos = useCallback(
+    async (
+      dni: string,
+      datos: { nombreCompleto: string; empleador: string; email?: string; telefono?: string; direccion?: string },
+    ) => {
+      const limpio = dni.replace(/\D/g, '')
+      const { error } = await supabase
+        .from('titulares')
+        .update({
+          nombre_completo: datos.nombreCompleto,
+          empleador: datos.empleador,
+          email: datos.email || null,
+          telefono: datos.telefono || null,
+          direccion: datos.direccion || null,
+        })
+        .eq('dni', limpio)
+      if (error) throw error
+      setLigeros((actuales) => actuales.map((r) => (r.dni === limpio ? { ...r, empleador: datos.empleador } : r)))
+    },
+    [],
+  )
+
+  // El usuario que carga el trámite se identifica con su propio auth.uid() — la política RLS
+  // de INSERT en tramites (0001) exige que usuario_id = auth.uid(), así que nadie puede cargar
+  // un trámite a nombre de otra persona.
+  const registrarTramite = useCallback(async (dni: string, descripcion: string, usuarioId: string) => {
     const limpio = dni.replace(/\D/g, '')
-    const { error } = await supabase
+    const { data: titular, error: errorTitular } = await supabase
       .from('titulares')
-      .update({ nombre_completo: datos.nombreCompleto, empleador: datos.empleador })
+      .select('id')
       .eq('dni', limpio)
+      .maybeSingle()
+    if (errorTitular || !titular) throw errorTitular ?? new Error('No se encontró el afiliado.')
+    const { error } = await supabase.from('tramites').insert({
+      titular_id: titular.id,
+      usuario_id: usuarioId,
+      descripcion,
+    })
     if (error) throw error
-    setLigeros((actuales) => actuales.map((r) => (r.dni === limpio ? { ...r, empleador: datos.empleador } : r)))
   }, [])
 
   // El FK `on delete restrict` de tramites.titular_id (supabase/migrations/0001) es quien
@@ -195,6 +240,7 @@ export function useTitularesDB() {
     agregarFamiliar,
     quitarFamiliar,
     editarDatos,
+    registrarTramite,
     eliminar,
     listarEmpleadores,
   }

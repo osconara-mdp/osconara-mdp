@@ -6,7 +6,15 @@ interface FormularioNuevoAfiliadoProps {
   existeDni: (dni: string) => boolean
   empleadoresConocidos: string[]
   onGuardar: (
-    datos: { dni: string; nombreCompleto: string; empleador: string; estado: EstadoAportes },
+    datos: {
+      dni: string
+      nombreCompleto: string
+      empleador: string
+      estado: EstadoAportes
+      email?: string
+      telefono?: string
+      direccion?: string
+    },
     opciones: { cargarOtro: boolean },
   ) => void
   onCancelar: () => void
@@ -22,6 +30,9 @@ export function FormularioNuevoAfiliado({
   const [nombreCompleto, setNombreCompleto] = useState('')
   const [empleador, setEmpleador] = useState('')
   const [estado, setEstado] = useState<EstadoAportes>('activo')
+  const [email, setEmail] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [direccion, setDireccion] = useState('')
   const [error, setError] = useState('')
 
   function validarYObtenerDatos() {
@@ -38,7 +49,15 @@ export function FormularioNuevoAfiliado({
       setError('Completá el nombre y el empleador.')
       return null
     }
-    return { dni: dniLimpio, nombreCompleto: nombreCompleto.trim(), empleador: empleador.trim(), estado }
+    return {
+      dni: dniLimpio,
+      nombreCompleto: nombreCompleto.trim(),
+      empleador: empleador.trim(),
+      estado,
+      email: email.trim() || undefined,
+      telefono: telefono.trim() || undefined,
+      direccion: direccion.trim() || undefined,
+    }
   }
 
   function handleSubmit(e: FormEvent) {
@@ -55,6 +74,9 @@ export function FormularioNuevoAfiliado({
     setDni('')
     setNombreCompleto('')
     setEstado('activo')
+    setEmail('')
+    setTelefono('')
+    setDireccion('')
     setError('')
     // El empleador se mantiene: cargar varios afiliados de la misma empresa es el caso común.
   }
@@ -109,6 +131,49 @@ export function FormularioNuevoAfiliado({
             <option key={e} value={e} />
           ))}
         </datalist>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="nuevo-email" className="mb-1 block text-xs font-medium uppercase tracking-wide text-txt-tertiary">
+            Correo electrónico <span className="normal-case text-txt-tertiary">(opcional)</span>
+          </label>
+          <input
+            id="nuevo-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="afiliado@correo.com"
+            className="h-12 w-full rounded-lg border border-border-default bg-surface-base px-4 text-base text-txt-primary placeholder:text-txt-tertiary focus:border-brand-secondary focus:outline-none focus:ring-2 focus:ring-brand-secondary/30"
+          />
+        </div>
+        <div>
+          <label htmlFor="nuevo-telefono" className="mb-1 block text-xs font-medium uppercase tracking-wide text-txt-tertiary">
+            Teléfono <span className="normal-case text-txt-tertiary">(opcional)</span>
+          </label>
+          <input
+            id="nuevo-telefono"
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            placeholder="223 456-7890"
+            className="h-12 w-full rounded-lg border border-border-default bg-surface-base px-4 text-base text-txt-primary placeholder:text-txt-tertiary focus:border-brand-secondary focus:outline-none focus:ring-2 focus:ring-brand-secondary/30"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="nuevo-direccion" className="mb-1 block text-xs font-medium uppercase tracking-wide text-txt-tertiary">
+          Dirección <span className="normal-case text-txt-tertiary">(opcional)</span>
+        </label>
+        <input
+          id="nuevo-direccion"
+          type="text"
+          value={direccion}
+          onChange={(e) => setDireccion(e.target.value)}
+          placeholder="Calle, número, barrio"
+          className="h-12 w-full rounded-lg border border-border-default bg-surface-base px-4 text-base text-txt-primary placeholder:text-txt-tertiary focus:border-brand-secondary focus:outline-none focus:ring-2 focus:ring-brand-secondary/30"
+        />
       </div>
 
       <fieldset>

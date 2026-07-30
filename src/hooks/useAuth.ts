@@ -19,7 +19,7 @@ async function cargarUsuario(authUserId: string, email: string): Promise<Usuario
     .eq('id', authUserId)
     .maybeSingle()
   if (error || !data) return null
-  return { email, nombre: data.full_name, rol: data.role as Rol }
+  return { id: authUserId, email, nombre: data.full_name, rol: data.role as Rol }
 }
 
 // Login real contra Supabase Auth (supabase.auth.signInWithPassword). El límite de intentos

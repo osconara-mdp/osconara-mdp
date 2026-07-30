@@ -4,6 +4,7 @@
 export type Rol = 'administrativa' | 'supervisor'
 
 export interface Usuario {
+  id: string
   email: string
   nombre: string
   rol: Rol

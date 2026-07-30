@@ -160,6 +160,15 @@ function AppInterna({ usuario, onCerrarSesion }: { usuario: Usuario; onCerrarSes
                       mostrar('No se pudo quitar al familiar. Probá de nuevo.')
                     }
                   }}
+                  onRegistrarTramite={async (dni, descripcion) => {
+                    try {
+                      await db.registrarTramite(dni, descripcion, usuario.id)
+                      await buscar(dni)
+                      mostrar('Trámite registrado.')
+                    } catch {
+                      mostrar('No se pudo registrar el trámite. Probá de nuevo.')
+                    }
+                  }}
                   onEditarDatos={() => setModalEditarAbierto(true)}
                 />
               </motion.div>

@@ -5,7 +5,13 @@ import type { Titular } from '@/lib/mock-data'
 interface FormularioEditarAfiliadoProps {
   titular: Titular
   empleadoresConocidos: string[]
-  onGuardar: (datos: { nombreCompleto: string; empleador: string }) => void
+  onGuardar: (datos: {
+    nombreCompleto: string
+    empleador: string
+    email?: string
+    telefono?: string
+    direccion?: string
+  }) => void
   onCancelar: () => void
   onEliminar: () => void
 }
@@ -19,6 +25,9 @@ export function FormularioEditarAfiliado({
 }: FormularioEditarAfiliadoProps) {
   const [nombreCompleto, setNombreCompleto] = useState(titular.nombreCompleto)
   const [empleador, setEmpleador] = useState(titular.empleador)
+  const [email, setEmail] = useState(titular.email ?? '')
+  const [telefono, setTelefono] = useState(titular.telefono ?? '')
+  const [direccion, setDireccion] = useState(titular.direccion ?? '')
   const [error, setError] = useState('')
   const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
 
@@ -30,7 +39,13 @@ export function FormularioEditarAfiliado({
       setError('Completá el nombre y el empleador.')
       return
     }
-    onGuardar({ nombreCompleto: nombreCompleto.trim(), empleador: empleador.trim() })
+    onGuardar({
+      nombreCompleto: nombreCompleto.trim(),
+      empleador: empleador.trim(),
+      email: email.trim() || undefined,
+      telefono: telefono.trim() || undefined,
+      direccion: direccion.trim() || undefined,
+    })
   }
 
   function handleEliminar() {
@@ -78,6 +93,49 @@ export function FormularioEditarAfiliado({
             <option key={e} value={e} />
           ))}
         </datalist>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="editar-email" className="mb-1 block text-xs font-medium uppercase tracking-wide text-txt-tertiary">
+            Correo electrónico <span className="normal-case text-txt-tertiary">(opcional)</span>
+          </label>
+          <input
+            id="editar-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="afiliado@correo.com"
+            className="h-12 w-full rounded-lg border border-border-default bg-surface-base px-4 text-base text-txt-primary placeholder:text-txt-tertiary focus:border-brand-secondary focus:outline-none focus:ring-2 focus:ring-brand-secondary/30"
+          />
+        </div>
+        <div>
+          <label htmlFor="editar-telefono" className="mb-1 block text-xs font-medium uppercase tracking-wide text-txt-tertiary">
+            Teléfono <span className="normal-case text-txt-tertiary">(opcional)</span>
+          </label>
+          <input
+            id="editar-telefono"
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            placeholder="223 456-7890"
+            className="h-12 w-full rounded-lg border border-border-default bg-surface-base px-4 text-base text-txt-primary placeholder:text-txt-tertiary focus:border-brand-secondary focus:outline-none focus:ring-2 focus:ring-brand-secondary/30"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="editar-direccion" className="mb-1 block text-xs font-medium uppercase tracking-wide text-txt-tertiary">
+          Dirección <span className="normal-case text-txt-tertiary">(opcional)</span>
+        </label>
+        <input
+          id="editar-direccion"
+          type="text"
+          value={direccion}
+          onChange={(e) => setDireccion(e.target.value)}
+          placeholder="Calle, número, barrio"
+          className="h-12 w-full rounded-lg border border-border-default bg-surface-base px-4 text-base text-txt-primary placeholder:text-txt-tertiary focus:border-brand-secondary focus:outline-none focus:ring-2 focus:ring-brand-secondary/30"
+        />
       </div>
 
       {error && (
