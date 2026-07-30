@@ -1,5 +1,5 @@
 import { motion, useReducedMotion, type Variants } from 'motion/react'
-import { Pencil, X } from 'lucide-react'
+import { Pencil, Printer, X } from 'lucide-react'
 import type { EstadoAportes, Parentesco, Titular } from '@/lib/mock-data'
 import { SelloEstado } from '@/components/app/SelloEstado'
 import { InfoNota } from '@/components/app/InfoNota'
@@ -40,7 +40,7 @@ export function FichaAfiliado({
       initial={{ opacity: 0, y: reducedMotion ? 0 : 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-lg border border-border-default bg-surface-primary p-6 shadow-md"
+      className="imprimir-area rounded-lg border border-border-default bg-surface-primary p-6 shadow-md"
     >
       <div className="flex items-center justify-between gap-4">
         <div>
@@ -50,17 +50,27 @@ export function FichaAfiliado({
               type="button"
               onClick={onEditarDatos}
               aria-label="Editar datos del afiliado"
-              className="-m-2 flex items-center justify-center p-2 text-txt-tertiary hover:text-brand-secondary"
+              className="no-imprimir -m-2 flex items-center justify-center p-2 text-txt-tertiary hover:text-brand-secondary"
             >
               <Pencil size={14} />
             </button>
           </div>
           <p className="mt-1 text-sm text-txt-tertiary tabular">DNI {titular.dni} · Titular</p>
-          <div className="mt-2">
+          <div className="mt-2 no-imprimir">
             <CambiarEstado estado={titular.estado} onConfirmar={(nuevo) => onCambiarEstado(titular.dni, nuevo)} />
           </div>
         </div>
-        <SelloEstado estado={titular.estado} />
+        <div className="flex items-center gap-3">
+          <SelloEstado estado={titular.estado} />
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="no-imprimir flex h-9 items-center gap-1.5 rounded-lg border border-border-default px-3 text-xs font-semibold text-txt-secondary hover:border-brand-secondary hover:text-brand-secondary"
+          >
+            <Printer size={14} />
+            Imprimir historial
+          </button>
+        </div>
       </div>
 
       <dl className="mt-5 grid grid-cols-1 gap-4 rounded-lg bg-surface-tertiary p-4 sm:grid-cols-2">
@@ -115,7 +125,7 @@ export function FichaAfiliado({
                     type="button"
                     aria-label={`Quitar a ${f.nombre} del grupo familiar`}
                     onClick={() => onQuitarFamiliar(titular.dni, f.nombre)}
-                    className="-m-2 flex items-center justify-center p-2 text-txt-tertiary hover:text-status-error"
+                    className="no-imprimir -m-2 flex items-center justify-center p-2 text-txt-tertiary hover:text-status-error"
                   >
                     <X size={12} />
                   </button>
@@ -123,7 +133,9 @@ export function FichaAfiliado({
               ))}
             </motion.div>
           )}
-          <AgregarFamiliar onAgregar={(nombre, parentesco) => onAgregarFamiliar(titular.dni, nombre, parentesco)} />
+          <div className="no-imprimir">
+            <AgregarFamiliar onAgregar={(nombre, parentesco) => onAgregarFamiliar(titular.dni, nombre, parentesco)} />
+          </div>
         </div>
       </div>
 
@@ -149,7 +161,9 @@ export function FichaAfiliado({
             ))}
           </motion.ul>
         )}
-        <RegistrarTramite onRegistrar={(descripcion) => onRegistrarTramite(titular.dni, descripcion)} />
+        <div className="no-imprimir">
+          <RegistrarTramite onRegistrar={(descripcion) => onRegistrarTramite(titular.dni, descripcion)} />
+        </div>
       </div>
     </motion.div>
   )

@@ -96,3 +96,24 @@ body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Imprimir/guardar como PDF la ficha de un afiliado (botón "Imprimir historial") — solo se ve
+   la ficha en sí, sin buscador, botones ni controles de edición. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .imprimir-area,
+  .imprimir-area * {
+    visibility: visible;
+  }
+  .imprimir-area {
+    position: absolute;
+    inset: 0;
+    box-shadow: none;
+    border: none;
+  }
+  .no-imprimir {
+    display: none !important;
+  }
+}
