@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import type { EstadoAportes, Familiar, Parentesco, Titular } from '@/lib/mock-data'
+import type { EstadoAportes, Familiar, Parentesco, ResumenAfiliado, Titular } from '@/lib/mock-data'
 
 // Consultas reales contra Supabase (titulares/grupo_familiar/tramites — ver
 // supabase/migrations/0001_esquema_inicial.sql y 0002_ajustes_app_real.sql). Mantiene la misma
@@ -107,6 +107,20 @@ export function useTitularesDB() {
         usuario: (t.profiles as unknown as { full_name: string } | null)?.full_name ?? 'Usuario',
       })),
     }
+  }, [])
+
+  const listar = useCallback(async (): Promise<ResumenAfiliado[]> => {
+    const { data, error } = await supabase
+      .from('titulares')
+      .select('dni, nombre_completo, empleador, estado_aportes')
+      .order('nombre_completo')
+    if (error) throw error
+    return data.map((f) => ({
+      dni: f.dni,
+      nombreCompleto: f.nombre_completo,
+      empleador: f.empleador,
+      estado: f.estado_aportes === 'inactivo' ? 'inactivo' : 'activo',
+    }))
   }, [])
 
   const existeDni = useCallback(
@@ -234,6 +248,7 @@ export function useTitularesDB() {
 
   return {
     buscarPorDni,
+    listar,
     existeDni,
     crear,
     actualizarEstado,

@@ -16,6 +16,13 @@ export interface Tramite {
   usuario: string
 }
 
+export interface ResumenAfiliado {
+  dni: string
+  nombreCompleto: string
+  empleador: string
+  estado: EstadoAportes
+}
+
 export interface Titular {
   dni: string
   nombreCompleto: string

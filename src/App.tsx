@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Plus } from 'lucide-react'
+import { List, Plus } from 'lucide-react'
 import { Header } from '@/components/app/Header'
 import { Login } from '@/components/app/Login'
 import { BuscadorDni } from '@/components/app/BuscadorDni'
@@ -10,7 +10,8 @@ import { Modal } from '@/components/app/Modal'
 import { FormularioNuevoAfiliado } from '@/components/app/FormularioNuevoAfiliado'
 import { FormularioEditarAfiliado } from '@/components/app/FormularioEditarAfiliado'
 import { Toast } from '@/components/app/Toast'
-import { EstadoVacio, EstadoNoEncontrado, EstadoError, EstadoCargando } from '@/components/app/EstadoVacio'
+import { ListadoAfiliados } from '@/components/app/ListadoAfiliados'
+import { EstadoNoEncontrado, EstadoError, EstadoCargando } from '@/components/app/EstadoVacio'
 import { useAuth } from '@/hooks/useAuth'
 import { useBuscarAfiliado } from '@/hooks/useBuscarAfiliado'
 import { useBusquedasRecientes } from '@/hooks/useBusquedasRecientes'
@@ -61,14 +62,24 @@ function AppInterna({ usuario, onCerrarSesion }: { usuario: Usuario; onCerrarSes
       <main className="mx-auto w-full max-w-2xl flex-1 px-8 py-8">
         <div className="mb-1 flex items-center justify-between">
           <h1 className="font-display text-xl font-semibold text-txt-primary">¿A quién atendemos?</h1>
-          <button
-            type="button"
-            onClick={() => setModalNuevoAbierto(true)}
-            className="flex h-8 items-center gap-1 text-xs font-semibold text-txt-tertiary hover:text-brand-secondary"
-          >
-            <Plus size={13} />
-            Nuevo afiliado
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={limpiar}
+              className="flex h-8 items-center gap-1 text-xs font-semibold text-txt-tertiary hover:text-brand-secondary"
+            >
+              <List size={13} />
+              Ver listado
+            </button>
+            <button
+              type="button"
+              onClick={() => setModalNuevoAbierto(true)}
+              className="flex h-8 items-center gap-1 text-xs font-semibold text-txt-tertiary hover:text-brand-secondary"
+            >
+              <Plus size={13} />
+              Nuevo afiliado
+            </button>
+          </div>
         </div>
         <p className="mb-6 text-sm text-txt-tertiary">
           Buscá por DNI para ver el estado de aportes, el grupo familiar y el historial.
@@ -92,7 +103,7 @@ function AppInterna({ usuario, onCerrarSesion }: { usuario: Usuario; onCerrarSes
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               >
-                <EstadoVacio />
+                <ListadoAfiliados cargar={db.listar} onSeleccionar={buscar} />
               </motion.div>
             )}
             {estado.fase === 'cargando' && (
